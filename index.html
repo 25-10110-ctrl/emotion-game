@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>🌈 오늘 내 마음은 어떤 색?</title>
+<style>
+/* ════ RESET ════ */
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{width:100%;height:100%;overflow:hidden;touch-action:manipulation;}
+body{font-family:'Apple SD Gothic Neo','Noto Sans KR','Malgun Gothic',sans-serif;
+     background:#B3E5FC;transition:background 1.2s ease;}
+
+/* ════ SCREENS ════ */
+.screen{display:none;position:fixed;inset:0;flex-direction:column;align-items:center;overflow:hidden;}
+.screen.active{display:flex;}
+
+/* ════════════════════════════════════════
+   INTRO SCREEN
+════════════════════════════════════════ */
+#intro{
+  background:linear-gradient(160deg,#FF9A9E 0%,#FAD0C4 45%,#FEE9D8 100%);
+  justify-content:center; text-align:center; padding:30px 20px; gap:14px;
+}
+.intro-title{font-size:clamp(1.7rem,6.5vw,2.6rem);font-weight:900;color:#fff;
+  text-shadow:2px 3px 0 rgba(0,0,0,.18);line-height:1.3;}
+.intro-sub{font-size:clamp(.9rem,3vw,1.1rem);color:rgba(255,255,255,.9);line-height:1.7;}
+.intro-row{display:flex;justify-content:center;gap:12px;}
+.intro-bubble{
+  width:62px;height:62px;border-radius:50%;background:white;
+  display:flex;align-items:center;justify-content:center;font-size:2rem;
+  box-shadow:0 4px 16px rgba(0,0,0,.15);
+  animation:iBounce 1.8s ease-in-out infinite alternate;
+}
+.intro-bubble:nth-child(2){animation-delay:.25s}
+.intro-bubble:nth-child(3){animation-delay:.5s}
+.intro-bubble:nth-child(4){animation-delay:.75s}
+.intro-bubble:nth-child(5){animation-delay:1s}
+@keyframes iBounce{from{transform:translateY(0)}to{transform:translateY(-14px)}}
+.btn-start{
+  background:white;color:#FF6B6B;font-size:1.4rem;font-weight:900;
+  padding:16px 52px;border:none;border-radius:50px;cursor:pointer;
+  box-shadow:0 6px 22px rgba(0,0,0,.2);transition:transform .15s;
+  touch-action:manipulation;
+}
+.btn-start:active{transform:scale(.94);}
+
+/* ════════════════════════════════════════
+   GAME SCREEN
+════════════════════════════════════════ */
+#game{justify-content:flex-start;padding:0;transition:background 1.2s;}
+
+/* floating bg blobs */
+.blob{position:absolute;border-radius:50%;opacity:.15;pointer-events:none;transition:background 1.2s;}
+.blob1{width:260px;height:260px;background:#fff;top:-70px;left:-70px;animation:bBlob 7s ease-in-out infinite;}
+.blob2{width:200px;height:200px;background:#fff;bottom:-55px;right:-55px;animation:bBlob 9s ease-in-out infinite reverse;}
+@keyframes bBlob{0%,100%{transform:scale(1) translate(0,0)}50%{transform:scale(1.1) translate(12px,10px)}}
+
+/* ── progress dots ── */
+.prog-bar{display:flex;gap:10px;padding:14px 0 8px;justify-content:center;position:relative;z-index:10;}
+.prog-dot{width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,.35);transition:all .4s;}
+.prog-dot.done{background:#fff;box-shadow:0 0 8px rgba(255,255,255,.8);}
+.prog-dot.cur {background:rgba(255,255,255,.8);}
+
+/* ── Character area ── */
+.char-area{
+  position:relative;z-index:5;
+  display:flex;flex-direction:column;align-items:center;
+  padding:6px 0 4px; flex-shrink:0;
+}
+
+/* ════ CSS CHARACTER FACE ════ */
+.char-wrap{
+  position:relative;width:150px;height:180px;
+  display:flex;justify-content:center;align-items:flex-end;
+  transition:transform .3s;
+}
+.char-wrap.shake{animation:cfShake .4s ease-in-out;}
+.char-wrap.bounce{animation:cfBounce .6s cubic-bezier(.34,1.56,.64,1);}
+.char-wrap.dance{animation:cfDance .7s ease-in-out 3;}
+.char-wrap.tremble{animation:cfTremble .12s linear infinite;}
+@keyframes cfShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-9px)}40%{transform:translateX(9px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
+@keyframes cfBounce{0%{transform:scale(1)}50%{transform:scale(1.16)}100%{transform:scale(1)}}
+@keyframes cfDance{0%,100%{transform:rotate(0) scale(1)}30%{transform:rotate(-9deg) scale(1.06)}70%{transform:rotate(9deg) scale(1.06)}}
+@keyframes cfTremble{0%,100%{transform:translateX(0)}50%{transform:translateX(-4px)}}
+
+/* EARS container (positioned absolute, varies per type) */
+#char-ears{position:absolute;top:0;left:0;right:0;height:60px;}
+
+/* BUNNY EARS */
+.bunny-ears .ear{position:absolute;width:34px;height:74px;border-radius:50px;top:0;transition:background .5s;}
+.bunny-ears .ear.l{left:24px;transform:rotate(-9deg);}
+.bunny-ears .ear.r{right:24px;transform:rotate(9deg);}
+.bunny-ears .ear-in{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:16px;height:52px;background:#FFB3C1;border-radius:50px;}
+
+/* BEAR EARS */
+.bear-ears .ear{position:absolute;width:42px;height:40px;border-radius:50%;top:8px;transition:background .5s;}
+.bear-ears .ear.l{left:8px;}
+.bear-ears .ear.r{right:8px;}
+.bear-ears .ear-in{position:absolute;top:9px;left:50%;transform:translateX(-50%);width:22px;height:22px;background:rgba(0,0,0,.14);border-radius:50%;}
+
+/* CAT EARS */
+.cat-ears .ear{position:absolute;width:0;height:0;top:0;border-left:20px solid transparent;border-right:20px solid transparent;}
+.cat-ears .ear.l{left:20px;}
+.cat-ears .ear.r{right:20px;}
+
+/* DOG EARS */
+.dog-ears .ear{position:absolute;width:38px;height:56px;border-radius:50% 50% 62% 62%;top:18px;transition:background .5s;}
+.dog-ears .ear.l{left:-4px;transform:rotate(14deg);}
+.dog-ears .ear.r{right:-4px;transform:rotate(-14deg);}
+
+/* CHICK CROWN */
+.chick-crown .feather{position:absolute;border-radius:50%;transition:background .5s;}
+.chick-crown .f1{width:16px;height:32px;left:46px;top:-16px;transform:rotate(-18deg);}
+.chick-crown .f2{width:18px;height:36px;left:62px;top:-20px;}
+.chick-crown .f3{width:16px;height:32px;left:80px;top:-16px;transform:rotate(18deg);}
+
+/* ── HEAD ── */
+.char-head{
+  position:absolute;bottom:0;left:50%;transform:translateX(-50%);
+  width:132px;height:130px;border-radius:50%;
+  transition:background .6s;box-shadow:0 8px 26px rgba(0,0,0,.18);
+  overflow:hidden; /* clip cheeks/blush */
+}
+/* overlay tint for angry */
+.char-head::after{content:'';position:absolute;inset:0;border-radius:50%;background:transparent;transition:background .5s;}
+
+/* ── EYEBROWS ── */
+.char-brows{position:absolute;top:30px;left:50%;transform:translateX(-50%);display:flex;gap:24px;}
+.char-brow{width:28px;height:5px;background:#333;border-radius:3px;transition:all .45s;}
+
+/* ── EYES ── */
+.char-eyes{position:absolute;top:46px;left:50%;transform:translateX(-50%);display:flex;gap:24px;}
+.char-eye{
+  width:24px;height:28px;background:#222;border-radius:50%;position:relative;
+  transition:all .45s;
+}
+.char-eye::after{content:'';position:absolute;top:4px;right:3px;width:8px;height:8px;background:#fff;border-radius:50%;}
+
+/* ── NOSE ── */
+.char-nose{position:absolute;top:78px;left:50%;transform:translateX(-50%);width:14px;height:10px;background:#FF9EB5;border-radius:50%;}
+
+/* ── BEAK (chick) ── */
+.char-beak{
+  position:absolute;bottom:26px;left:50%;transform:translateX(-50%);
+  width:0;height:0;border-left:12px solid transparent;border-right:12px solid transparent;
+  border-top:14px solid #FF9800;display:none;
+}
+
+/* ── MOUTH ── */
+.char-mouth-wrap{position:absolute;bottom:18px;left:50%;transform:translateX(-50%);width:70px;height:36px;display:flex;align-items:center;justify-content:center;}
+.char-mouth{
+  width:48px;height:24px;
+  border:5px solid #333;border-top-color:transparent;
+  border-radius:0 0 30px 30px;
+  transition:all .5s cubic-bezier(.34,1.2,.64,1);
+}
+
+/* ── CHEEKS ── */
+.char-cheek{position:absolute;width:30px;height:18px;background:#FFB3C6;border-radius:50%;top:70px;opacity:0;transition:opacity .5s;}
+.char-cheek.cl{left:10px;} .char-cheek.cr{right:10px;}
+
+/* ── TEARS ── */
+.char-tear{
+  position:absolute;top:70px;width:10px;height:16px;
+  background:#64B5F6;border-radius:50% 50% 50% 50%/40% 40% 60% 60%;
+  opacity:0;transition:opacity .4s;
+  animation:tearFall 1.2s ease-in infinite;
+}
+.char-tear.tl{left:20px;animation-delay:0s;}
+.char-tear.tr{right:20px;animation-delay:.55s;}
+@keyframes tearFall{0%{transform:translateY(0);opacity:1}75%{opacity:.7}100%{transform:translateY(34px);opacity:0}}
+
+/* ── SWEAT DROP (scared) ── */
+.char-sweat{
+  position:absolute;top:22px;right:2px;
+  width:11px;height:17px;background:#81D4FA;
+  border-radius:50% 50% 50% 50%/40% 40% 60% 60%;
+  opacity:0;transition:opacity .4s;
+}
+
+/* ── WHISKERS (cat) ── */
+.char-whiskers{position:absolute;top:74px;left:0;right:0;display:none;}
+.wsk{position:absolute;height:2px;background:rgba(0,0,0,.22);border-radius:2px;}
+.wl1{width:30px;left:2px;top:0;transform:rotate(-8deg);}
+.wl2{width:28px;left:2px;top:8px;}
+.wl3{width:26px;left:2px;top:16px;transform:rotate(8deg);}
+.wr1{width:30px;right:2px;top:0;transform:rotate(8deg);}
+.wr2{width:28px;right:2px;top:8px;}
+.wr3{width:26px;right:2px;top:16px;transform:rotate(-8deg);}
+
+/* ════ EMOTION STATES ════ */
+
+/* SAD 😢 */
+.face-sad .char-eye{height:22px;}
+.face-sad .brow-l{transform:rotate(-14deg);}
+.face-sad .brow-r{transform:rotate(14deg);}
+.face-sad .char-mouth{width:36px;height:16px;border-top-color:#333;border-bottom-color:transparent;border-radius:30px 30px 0 0;}
+.face-sad .char-tear{opacity:1;}
+
+/* ANGRY 😠 */
+.face-angry .char-eye{height:18px;background:#C62828;}
+.face-angry .char-eye::after{display:none;}
+.face-angry .brow-l{transform:rotate(16deg) translateY(5px);background:#C62828;height:6px;}
+.face-angry .brow-r{transform:rotate(-16deg) translateY(5px);background:#C62828;height:6px;}
+.face-angry .char-mouth{width:30px;height:14px;border-top-color:#333;border-bottom-color:transparent;border-radius:30px 30px 0 0;}
+.face-angry .char-head::after{background:rgba(255,80,50,.1);}
+
+/* SCARED 😨 */
+.face-scared .char-eye{width:30px;height:34px;}
+.face-scared .char-mouth{width:24px;height:24px;border-top-color:#333;border-radius:50%;}
+.face-scared .char-sweat{opacity:1;}
+
+/* LONELY 🥺 */
+.face-lonely .char-eye{height:18px;}
+.face-lonely .brow-l{transform:rotate(-8deg);opacity:.6;}
+.face-lonely .brow-r{transform:rotate(8deg);opacity:.6;}
+.face-lonely .char-mouth{width:34px;height:0;border:none;border-bottom:5px solid #999;border-radius:0;}
+
+/* CRYING 😭 */
+.face-crying .char-eye{height:13px;border-radius:50%;}
+.face-crying .brow-l{transform:rotate(-14deg);}
+.face-crying .brow-r{transform:rotate(14deg);}
+.face-crying .char-mouth{width:44px;height:22px;border-top-color:#333;border-bottom-color:transparent;border-radius:30px 30px 0 0;}
+.face-crying .char-tear{opacity:1;animation-duration:.75s;}
+
+/* BETTER 🙂 (transitional) */
+.face-better .char-brow,.face-better .brow-l,.face-better .brow-r{transform:rotate(0);background:#333;height:5px;}
+.face-better .char-mouth{width:38px;height:14px;border-top-color:transparent;border-bottom-color:#333;border-radius:0 0 22px 22px;}
+.face-better .char-tear{opacity:.25;}
+.face-better .char-eye{background:#222;}
+.face-better .char-eye::after{display:block;}
+
+/* HAPPY 😊 */
+.face-happy .char-eye{height:13px;border-radius:50% 50% 0 0;}
+.face-happy .char-brow,.face-happy .brow-l,.face-happy .brow-r{transform:translateY(-3px);background:#333;height:5px;}
+.face-happy .char-mouth{width:64px;height:32px;border-top-color:transparent;border-bottom-color:#333;border-radius:0 0 44px 44px;}
+.face-happy .char-cheek{opacity:.65;}
+.face-happy .char-tear{opacity:0;}
+.face-happy .char-eye::after{display:block;}
+
+/* ════ CONTENT AREAS ════ */
+.scene-box{
+  position:relative;z-index:5;
+  background:rgba(255,255,255,.88);border-radius:22px;
+  padding:10px 18px;margin:0 14px 8px;
+  text-align:center;font-size:clamp(.9rem,3vw,1.05rem);font-weight:bold;color:#555;
+  box-shadow:0 4px 14px rgba(0,0,0,.1);width:92%;max-width:360px;
+  transition:all .5s;
+}
+.scene-emoji-big{font-size:2rem;display:block;margin-bottom:3px;}
+
+.question-box{
+  position:relative;z-index:5;
+  background:rgba(255,255,255,.92);border-radius:22px;
+  padding:11px 20px;margin:0 14px 12px;
+  text-align:center;font-size:clamp(1rem,3.5vw,1.2rem);font-weight:900;color:#333;
+  box-shadow:0 4px 16px rgba(0,0,0,.12);width:92%;max-width:360px;
+}
+
+/* ── CHOICE BUTTONS ── */
+.choices-wrap{
+  position:relative;z-index:5;
+  display:flex;flex-direction:column;gap:9px;
+  width:92%;max-width:360px;margin-bottom:10px;
+}
+.choice-btn{
+  background:white;border:3px solid transparent;border-radius:18px;
+  padding:12px 16px;font-size:clamp(.88rem,3vw,1rem);font-weight:bold;
+  color:#444;cursor:pointer;text-align:center;
+  box-shadow:0 4px 14px rgba(0,0,0,.1);transition:all .2s;
+  touch-action:manipulation;line-height:1.4;
+}
+.choice-btn:active{transform:scale(.96);}
+.choice-btn.ok  {border-color:#43E97B;background:#F0FFF4;color:#2E7D32;animation:cOk .5s;}
+.choice-btn.no  {border-color:#FF6B6B;background:#FFF0F0;animation:cNo .4s;}
+@keyframes cOk{0%{transform:scale(1)}50%{transform:scale(1.05)}100%{transform:scale(1)}}
+@keyframes cNo{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+
+/* ── COMFORT PHASE ── */
+.comfort-wrap{
+  display:none;flex-direction:column;align-items:center;
+  position:relative;z-index:5;width:100%;
+}
+.comfort-wrap.show{display:flex;}
+.comfort-label{
+  font-size:clamp(.9rem,3vw,1.05rem);font-weight:bold;
+  color:rgba(255,255,255,.95);text-shadow:0 1px 4px rgba(0,0,0,.18);
+  margin-bottom:8px;text-align:center;
+}
+/* Heart meter */
+.heart-meter{display:flex;gap:8px;margin-bottom:12px;}
+.h-slot{font-size:1.6rem;filter:grayscale(1) opacity(.35);transition:filter .3s;}
+.h-slot.lit{filter:none;animation:hPop .4s cubic-bezier(.34,1.56,.64,1);}
+@keyframes hPop{from{transform:scale(0)}to{transform:scale(1)}}
+/* Comfort buttons */
+.comfort-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;width:92%;max-width:360px;}
+.comfort-btn{
+  background:white;border:none;border-radius:20px;
+  padding:13px 10px;font-size:.88rem;font-weight:bold;color:#555;
+  cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;
+  box-shadow:0 5px 18px rgba(0,0,0,.12);transition:all .2s;touch-action:manipulation;
+}
+.comfort-btn .ce{font-size:2.2rem;}
+.comfort-btn:active{transform:scale(.92);}
+.comfort-btn.flash{animation:cFlash .3s;}
+@keyframes cFlash{0%{transform:scale(1)}40%{transform:scale(1.14)}100%{transform:scale(1)}}
+
+/* ── HAPPY PHASE ── */
+.happy-wrap{
+  display:none;flex-direction:column;align-items:center;
+  position:relative;z-index:5;width:100%;gap:12px;
+}
+.happy-wrap.show{display:flex;}
+.happy-box{
+  background:rgba(255,255,255,.94);border-radius:22px;
+  padding:14px 22px;margin:0 14px;
+  text-align:center;font-size:clamp(.95rem,3vw,1.1rem);font-weight:bold;color:#444;
+  box-shadow:0 5px 18px rgba(0,0,0,.14);width:92%;max-width:360px;
+}
+.happy-exclaim{font-size:1.5rem;color:#FF6B6B;margin-bottom:6px;}
+.btn-next{
+  background:linear-gradient(135deg,#43E97B,#38F9D7);color:white;
+  font-size:1.15rem;font-weight:900;padding:14px 44px;
+  border:none;border-radius:50px;cursor:pointer;
+  box-shadow:0 5px 18px rgba(67,233,123,.45);touch-action:manipulation;transition:transform .15s;
+}
+.btn-next:active{transform:scale(.95);}
+
+/* ════ END SCREEN ════ */
+#end{
+  justify-content:center;text-align:center;padding:30px 20px;gap:14px;
+  background:linear-gradient(135deg,#FF9A9E,#FAD0C4,#D1C4FF,#B3E5FC,#B8F0C8);
+  background-size:300% 300%;animation:rbBg 5s ease infinite;
+}
+@keyframes rbBg{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+.end-title{font-size:clamp(1.7rem,6vw,2.4rem);font-weight:900;color:#fff;text-shadow:2px 3px 0 rgba(0,0,0,.18);line-height:1.3;}
+.end-sub{font-size:clamp(.9rem,3vw,1.05rem);color:rgba(255,255,255,.92);line-height:1.8;}
+.end-chars{font-size:3.2rem;letter-spacing:8px;animation:wiggle 2s infinite;}
+@keyframes wiggle{0%,100%{transform:rotate(0)}25%{transform:rotate(-5deg)}75%{transform:rotate(5deg)}}
+.btn-restart{
+  background:white;color:#FF6B6B;font-size:1.2rem;font-weight:900;
+  padding:14px 46px;border:none;border-radius:50px;cursor:pointer;
+  box-shadow:0 6px 20px rgba(0,0,0,.2);touch-action:manipulation;transition:transform .15s;
+}
+.btn-restart:active{transform:scale(.95);}
+
+/* ════ PARTICLES ════ */
+.particle{
+  position:fixed;pointer-events:none;z-index:300;font-size:1.9rem;
+  animation:pFly 1.3s ease-out forwards;
+}
+@keyframes pFly{0%{transform:translateY(0) scale(1);opacity:1}100%{transform:translateY(-230px) scale(.15) rotate(360deg);opacity:0}}
+
+/* ════ TOAST ════ */
+.toast{
+  position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
+  background:rgba(0,0,0,.76);color:#fff;border-radius:30px;
+  padding:11px 28px;font-size:1rem;font-weight:bold;
+  z-index:200;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;
+}
+.toast.show{opacity:1;}
+
+/* small screen adjustments */
+@media(max-height:680px){
+  .char-wrap{width:120px;height:148px;}
+  .char-head{width:108px;height:106px;}
+  .char-area{padding:2px 0 2px;}
+  .scene-box,.question-box{padding:7px 14px;margin-bottom:5px;}
+  .choices-wrap{gap:6px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ════ INTRO ════ -->
+<div id="intro" class="screen active">
+  <div class="intro-title">🌈 오늘 내 마음은<br>어떤 색일까요?</div>
+  <div class="intro-sub">친구들의 마음을 이해하고<br>위로해줘요 💕</div>
+  <div class="intro-row">
+    <div class="intro-bubble">🐰</div>
+    <div class="intro-bubble">🐻</div>
+    <div class="intro-bubble">🐱</div>
+    <div class="intro-bubble">🐶</div>
+    <div class="intro-bubble">🐥</div>
+  </div>
+  <button class="btn-start" onclick="goStart()">🌟 시작해요!</button>
+</div>
+
+<!-- ════ GAME ════ -->
+<div id="game" class="screen">
+  <div class="blob blob1"></div>
+  <div class="blob blob2"></div>
+
+  <!-- progress -->
+  <div class="prog-bar" id="prog"></div>
+
+  <!-- Character -->
+  <div class="char-area">
+    <div class="char-wrap" id="cw">
+      <div id="char-ears"></div>
+      <div class="char-head face-sad" id="ch">
+        <div class="char-brows">
+          <div class="char-brow brow-l" id="bl"></div>
+          <div class="char-brow brow-r" id="br"></div>
+        </div>
+        <div class="char-eyes">
+          <div class="char-eye" id="el"></div>
+          <div class="char-eye" id="er"></div>
+        </div>
+        <div class="char-nose" id="nose"></div>
+        <div class="char-beak" id="beak"></div>
+        <div class="char-whiskers" id="whiskers">
+          <div class="wsk wl1"></div><div class="wsk wl2"></div><div class="wsk wl3"></div>
+          <div class="wsk wr1"></div><div class="wsk wr2"></div><div class="wsk wr3"></div>
+        </div>
+        <div class="char-mouth-wrap"><div class="char-mouth"></div></div>
+        <div class="char-cheek cl"></div>
+        <div class="char-cheek cr"></div>
+        <div class="char-tear tl"></div>
+        <div class="char-tear tr"></div>
+        <div class="char-sweat"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scene context -->
+  <div class="scene-box" id="scene-box">
+    <span class="scene-emoji-big" id="scene-emoji">😊</span>
+    <span id="scene-txt"></span>
+  </div>
+
+  <!-- Question -->
+  <div class="question-box" id="q-box"></div>
+
+  <!-- Empathy choices -->
+  <div class="choices-wrap" id="choices"></div>
+
+  <!-- Comfort phase -->
+  <div class="comfort-wrap" id="comfort-wrap">
+    <div class="comfort-label" id="comfort-label">🤗 친구를 위로해줘요!</div>
+    <div class="heart-meter" id="hearts"></div>
+    <div class="comfort-grid" id="comfort-grid"></div>
+  </div>
+
+  <!-- Happy phase -->
+  <div class="happy-wrap" id="happy-wrap">
+    <div class="happy-box">
+      <div class="happy-exclaim" id="h-exclaim"></div>
+      <div id="h-msg"></div>
+    </div>
+    <button class="btn-next" id="btn-next" onclick="nextScene()">다음 친구 →</button>
+  </div>
+</div>
+
+<!-- ════ END ════ -->
+<div id="end" class="screen">
+  <div class="end-title">🌈 우리 마음은<br>무지개예요!</div>
+  <div class="end-sub">슬픔도, 화남도, 두려움도<br>모두 소중한 마음이에요 💕<br>친구들을 잘 위로해줬어요!</div>
+  <div class="end-chars">🐰🐻🐱🐶🐥</div>
+  <button class="btn-restart" onclick="restartAll()">🔄 다시 할게요!</button>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════════════
+//  SCENARIO DATA
+// ════════════════════════════════════════
+const S = [
+  {
+    type:'bunny', name:'토끼', emoji:'🐰',
+    emotion:'sad', emotionKr:'속상해요',
+    hc:'#FAFAFA', ec:'#F0F0F0',     /* head color, ear color */
+    bg:'linear-gradient(160deg,#90CAF9 0%,#BBDEFB 60%,#E3F2FD 100%)',
+    happyBg:'linear-gradient(160deg,#FFF9C4 0%,#FFFDE7 60%,#FFF8E1 100%)',
+    sceneEmoji:'🍦', sceneTxt:'아이스크림이 바닥에 떨어졌어요',
+    q:'토끼가 왜 속상할까요?',
+    choices:[
+      {t:'🍦 아이스크림이\n떨어져서요', ok:true},
+      {t:'😴 너무 졸려서요',             ok:false},
+      {t:'🌧️ 비가 와서요',              ok:false},
+    ],
+    comforts:[
+      {e:'🤗',l:'안아주기'},{e:'🍦',l:'아이스크림'},{e:'🌸',l:'꽃 선물'},{e:'💬',l:'괜찮아!'},
+    ],
+    resolve:'토끼가 기분이 좋아졌어요!', exclaim:'고마워요! 💛',
+    ptcl:['⭐','🍦','💛','✨'],
+  },
+  {
+    type:'bear', name:'곰', emoji:'🐻',
+    emotion:'angry', emotionKr:'화났어요',
+    hc:'#D4A76A', ec:'#C4915E',
+    bg:'linear-gradient(160deg,#EF9A9A 0%,#FFCDD2 60%,#FFEBEE 100%)',
+    happyBg:'linear-gradient(160deg,#DCEDC8 0%,#F1F8E9 60%,#E8F5E9 100%)',
+    sceneEmoji:'🧸', sceneTxt:'친구가 내 장난감을 가져갔어요',
+    q:'곰이 왜 화가 났을까요?',
+    choices:[
+      {t:'🧸 장난감을\n빼앗겼어요',  ok:true},
+      {t:'🌙 잠을 못 잤어요',         ok:false},
+      {t:'🍕 피자가 없어서요',         ok:false},
+    ],
+    comforts:[
+      {e:'🤝',l:'손 잡기'},{e:'🧸',l:'장난감 주기'},{e:'😊',l:'웃어주기'},{e:'🫂',l:'같이 놀기'},
+    ],
+    resolve:'곰의 화가 풀렸어요!', exclaim:'같이 놀아요! 🎉',
+    ptcl:['⭐','🧸','💚','🌟'],
+  },
+  {
+    type:'cat', name:'고양이', emoji:'🐱',
+    emotion:'scared', emotionKr:'무서워요',
+    hc:'#FFB87A', ec:'#E8963C',
+    bg:'linear-gradient(160deg,#CE93D8 0%,#E1BEE7 60%,#F3E5F5 100%)',
+    happyBg:'linear-gradient(160deg,#80CBC4 0%,#B2DFDB 60%,#E0F2F1 100%)',
+    sceneEmoji:'⛈️', sceneTxt:'천둥번개가 쳐요!',
+    q:'고양이가 왜 무서울까요?',
+    choices:[
+      {t:'⛈️ 천둥번개가\n쳐서요',     ok:true},
+      {t:'🌻 꽃이 예뻐서요',           ok:false},
+      {t:'🍰 케이크가 없어서요',        ok:false},
+    ],
+    comforts:[
+      {e:'🤗',l:'안아주기'},{e:'🙌',l:'손 잡기'},{e:'🌙',l:'같이 있기'},{e:'🎵',l:'노래 부르기'},
+    ],
+    resolve:'고양이가 용감해졌어요!', exclaim:'무섭지 않아요! 💜',
+    ptcl:['⭐','💜','✨','🌟'],
+  },
+  {
+    type:'dog', name:'강아지', emoji:'🐶',
+    emotion:'lonely', emotionKr:'외로워요',
+    hc:'#F0C878', ec:'#D4AA52',
+    bg:'linear-gradient(160deg,#B0BEC5 0%,#CFD8DC 60%,#ECEFF1 100%)',
+    happyBg:'linear-gradient(160deg,#F48FB1 0%,#FCE4EC 60%,#FFF0F5 100%)',
+    sceneEmoji:'😔', sceneTxt:'아무도 같이 놀아주지 않아요',
+    q:'강아지가 왜 외로울까요?',
+    choices:[
+      {t:'😔 혼자여서\n외로워요',       ok:true},
+      {t:'🌞 날씨가 더워서요',          ok:false},
+      {t:'🎂 생일이 아니어서요',         ok:false},
+    ],
+    comforts:[
+      {e:'👋',l:'같이 놀기'},{e:'💐',l:'꽃 선물'},{e:'🤗',l:'안아주기'},{e:'🎈',l:'풍선 주기'},
+    ],
+    resolve:'강아지가 신나졌어요!', exclaim:'같이 놀아요! 💗',
+    ptcl:['⭐','🎈','💗','✨'],
+  },
+  {
+    type:'chick', name:'병아리', emoji:'🐥',
+    emotion:'crying', emotionKr:'울고 있어요',
+    hc:'#FFE57A', ec:'#FFD740',
+    bg:'linear-gradient(160deg,#81D4FA 0%,#B3E5FC 60%,#E1F5FE 100%)',
+    happyBg:'linear-gradient(160deg,#FFF176 0%,#FFFDE7 60%,#FFF9C4 100%)',
+    sceneEmoji:'🐓', sceneTxt:'엄마가 보고 싶어요',
+    q:'병아리가 왜 울고 있을까요?',
+    choices:[
+      {t:'🐓 엄마가\n보고 싶어서요',    ok:true},
+      {t:'🌵 선인장이 있어서요',         ok:false},
+      {t:'🚗 자동차가 빨라서요',         ok:false},
+    ],
+    comforts:[
+      {e:'🤗',l:'안아주기'},{e:'🌻',l:'해바라기'},{e:'🎵',l:'노래 부르기'},{e:'😘',l:'뽀뽀'},
+    ],
+    resolve:'병아리가 행복해졌어요!', exclaim:'삐약삐약! 🌟',
+    ptcl:['⭐','🌻','💛','🐣'],
+  },
+];
+
+// ════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════
+let cur=0, comfortCnt=0, phase='', busy=false;
+const NEED=5;
+const synth=window.speechSynthesis;
+
+function speak(t,rate=0.85,pitch=1.3,cb=null){
+  synth.cancel();
+  const u=new SpeechSynthesisUtterance(t);
+  u.lang='ko-KR';u.rate=rate;u.pitch=pitch;u.volume=1;
+  if(cb)u.onend=cb;
+  synth.speak(u);
+}
+
+// ════════════════════════════════════════
+//  SCREEN SWITCH
+// ════════════════════════════════════════
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>{s.classList.remove('active');});
+  document.getElementById(id).classList.add('active');
+}
+
+// ════════════════════════════════════════
+//  START
+// ════════════════════════════════════════
+function goStart(){
+  cur=0;
+  showScreen('game');
+  buildProg();
+  loadScene(0);
+}
+
+function buildProg(){
+  const p=document.getElementById('prog');
+  p.innerHTML='';
+  S.forEach((_,i)=>{
+    const d=document.createElement('div');
+    d.className='prog-dot'+(i===0?' cur':'');
+    d.id='pd'+i; p.appendChild(d);
+  });
+}
+function updProg(i){
+  S.forEach((_,j)=>{
+    const d=document.getElementById('pd'+j);
+    if(!d)return;
+    d.className='prog-dot'+(j<i?' done':(j===i?' cur':''));
+  });
+}
+
+// ════════════════════════════════════════
+//  LOAD SCENE
+// ════════════════════════════════════════
+function loadScene(idx){
+  const s=S[idx];
+  phase='empathy'; comfortCnt=0; busy=false;
+  updProg(idx);
+
+  // Background
+  document.getElementById('game').style.background=s.bg;
+
+  // Build character
+  buildChar(s);
+  setFace(s.emotion);
+
+  // Scene
+  document.getElementById('scene-emoji').textContent=s.sceneEmoji;
+  document.getElementById('scene-txt').textContent=s.sceneTxt;
+  showEl('scene-box',true);
+
+  // Question
+  document.getElementById('q-box').textContent=s.q;
+  showEl('q-box',true);
+
+  // Choices
+  buildChoices(s);
+  showEl('choices',true);
+
+  // Hide other phases
+  document.getElementById('comfort-wrap').classList.remove('show');
+  document.getElementById('happy-wrap').classList.remove('show');
+
+  // Voice
+  setTimeout(()=>speak(`${s.emoji} ${s.name} 친구가 있어요. ${s.sceneTxt}. ${s.q}`,0.85,1.3),400);
+}
+
+// ════════════════════════════════════════
+//  BUILD CHARACTER
+// ════════════════════════════════════════
+function buildChar(s){
+  const head=document.getElementById('ch');
+  head.style.background=s.hc;
+  document.getElementById('beak').style.display=(s.type==='chick'?'block':'none');
+  document.getElementById('nose').style.display=(s.type==='chick'?'none':'block');
+  document.getElementById('whiskers').style.display=(s.type==='cat'?'block':'none');
+
+  const ears=document.getElementById('char-ears');
+  ears.innerHTML='';
+  if(s.type==='bunny'){
+    ears.className='bunny-ears';
+    ears.innerHTML=`
+      <div class="ear l" style="background:${s.ec}"><div class="ear-in"></div></div>
+      <div class="ear r" style="background:${s.ec}"><div class="ear-in"></div></div>`;
+  } else if(s.type==='bear'){
+    ears.className='bear-ears';
+    ears.innerHTML=`
+      <div class="ear l" style="background:${s.ec}"><div class="ear-in"></div></div>
+      <div class="ear r" style="background:${s.ec}"><div class="ear-in"></div></div>`;
+  } else if(s.type==='cat'){
+    ears.className='cat-ears';
+    ears.innerHTML=`
+      <div class="ear l" style="border-bottom:46px solid ${s.ec}"></div>
+      <div class="ear r" style="border-bottom:46px solid ${s.ec}"></div>`;
+  } else if(s.type==='dog'){
+    ears.className='dog-ears';
+    ears.innerHTML=`
+      <div class="ear l" style="background:${s.ec}"></div>
+      <div class="ear r" style="background:${s.ec}"></div>`;
+  } else { // chick
+    ears.className='chick-crown';
+    ears.innerHTML=`
+      <div class="feather f1" style="background:${s.ec}"></div>
+      <div class="feather f2" style="background:${s.ec}"></div>
+      <div class="feather f3" style="background:${s.ec}"></div>`;
+  }
+  // Remove animation classes
+  const cw=document.getElementById('cw');
+  cw.className='char-wrap';
+}
+
+// ════════════════════════════════════════
+//  FACE STATE
+// ════════════════════════════════════════
+const FACES=['sad','angry','scared','lonely','crying','better','happy'];
+function setFace(state){
+  const h=document.getElementById('ch');
+  FACES.forEach(f=>h.classList.remove('face-'+f));
+  h.classList.add('face-'+state);
+  if(state==='scared'){
+    document.getElementById('cw').classList.add('tremble');
+  } else {
+    document.getElementById('cw').classList.remove('tremble');
+  }
+}
+
+// ════════════════════════════════════════
+//  CHOICES
+// ════════════════════════════════════════
+function buildChoices(s){
+  const wrap=document.getElementById('choices');
+  wrap.innerHTML='';
+  const shuffled=[...s.choices].sort(()=>Math.random()-.5);
+  shuffled.forEach(c=>{
+    const b=document.createElement('button');
+    b.className='choice-btn';
+    b.textContent=c.t;
+    b.addEventListener('click',()=>handleChoice(c.ok,b,s));
+    b.addEventListener('touchstart',e=>e.preventDefault(),{passive:false});
+    b.addEventListener('touchend',e=>{e.preventDefault();handleChoice(c.ok,b,s);});
+    wrap.appendChild(b);
+  });
+}
+
+function handleChoice(ok,btn,s){
+  if(busy||phase!=='empathy')return;
+  const allBtns=document.querySelectorAll('.choice-btn');
+  allBtns.forEach(b=>b.style.pointerEvents='none');
+
+  if(ok){
+    busy=true;
+    btn.classList.add('ok');
+    const cw=document.getElementById('cw');
+    cw.classList.add('shake');
+    setTimeout(()=>cw.classList.remove('shake'),500);
+    speak('맞아요! 정말 잘 알았어요! 이제 친구를 위로해줘요!',0.88,1.3,()=>{
+      setTimeout(()=>startComfort(s),200);
+    });
+  } else {
+    btn.classList.add('no');
+    speak('다시 생각해봐요~ 왜 그럴까요?',0.88,1.2);
+    setTimeout(()=>{
+      btn.classList.remove('no');
+      allBtns.forEach(b=>b.style.pointerEvents='auto');
+    },900);
+  }
+}
+
+// ════════════════════════════════════════
+//  COMFORT PHASE
+// ════════════════════════════════════════
+function startComfort(s){
+  phase='comfort'; comfortCnt=0; busy=false;
+  showEl('choices',false);
+  showEl('q-box',false);
+  showEl('scene-box',false);
+
+  const cw=document.getElementById('comfort-wrap');
+  cw.classList.add('show');
+  document.getElementById('comfort-label').textContent=`🤗 ${s.name}를 위로해줘요!`;
+
+  // Hearts
+  const hm=document.getElementById('hearts');
+  hm.innerHTML='';
+  for(let i=0;i<NEED;i++){
+    const h=document.createElement('div');
+    h.className='h-slot'; h.textContent='❤️'; h.id='hs'+i;
+    hm.appendChild(h);
+  }
+
+  // Comfort buttons
+  const cg=document.getElementById('comfort-grid');
+  cg.innerHTML='';
+  s.comforts.forEach(c=>{
+    const b=document.createElement('button');
+    b.className='comfort-btn';
+    b.innerHTML=`<span class="ce">${c.e}</span><span>${c.l}</span>`;
+    const tap=()=>doComfort(b,s);
+    b.addEventListener('click',tap);
+    b.addEventListener('touchstart',e=>e.preventDefault(),{passive:false});
+    b.addEventListener('touchend',e=>{e.preventDefault();tap();});
+    cg.appendChild(b);
+  });
+
+  speak(`${s.name}를 위로해주세요! 버튼을 눌러봐요!`,0.88,1.3);
+}
+
+function doComfort(btn,s){
+  if(phase!=='comfort'||comfortCnt>=NEED)return;
+  comfortCnt++;
+
+  // Flash button
+  btn.classList.add('flash');
+  setTimeout(()=>btn.classList.remove('flash'),350);
+
+  // Light up heart
+  const h=document.getElementById('hs'+(comfortCnt-1));
+  if(h)h.classList.add('lit');
+
+  // Particle from button
+  spawnAt(btn,[...s.ptcl,'💕']);
+
+  // Gradually improve face
+  if(comfortCnt===2) setFace('better');
+  if(comfortCnt===4){
+    const TOASTS=['잘하고 있어요! 🌟','한 번 더요!','거의 다 됐어요!','조금만 더!',''];
+    showToast(TOASTS[comfortCnt-1]||'');
+  }
+
+  if(comfortCnt>=NEED){
+    // FULLY HAPPY!
+    setFace('happy');
+    const cw=document.getElementById('cw');
+    cw.classList.remove('tremble');
+    cw.classList.add('dance');
+    setTimeout(()=>cw.classList.remove('dance'),2400);
+    spawnMany(s.ptcl,18);
+    setTimeout(()=>showHappy(s),700);
+  } else {
+    const msgs=['조금 더요! 💪','잘하고 있어요!','이제 조금만!','거의 다 됐어요! 🌟'];
+    showToast(msgs[Math.min(comfortCnt-1,3)]);
+  }
+}
+
+// ════════════════════════════════════════
+//  HAPPY PHASE
+// ════════════════════════════════════════
+function showHappy(s){
+  phase='happy';
+  document.getElementById('comfort-wrap').classList.remove('show');
+
+  // Warm background
+  document.getElementById('game').style.background=s.happyBg;
+
+  const hw=document.getElementById('happy-wrap');
+  hw.classList.add('show');
+  document.getElementById('h-exclaim').textContent=s.exclaim;
+  document.getElementById('h-msg').textContent=s.resolve;
+
+  const isLast=(cur>=S.length-1);
+  document.getElementById('btn-next').textContent=isLast?'🌈 마무리!':'다음 친구 →';
+
+  speak(`${s.resolve} ${s.exclaim} 정말 잘 위로해줬어요!`,0.85,1.3);
+}
+
+function nextScene(){
+  cur++;
+  if(cur>=S.length){
+    showEndScreen();
+  } else {
+    document.getElementById('happy-wrap').classList.remove('show');
+    showEl('choices',true);
+    showEl('q-box',true);
+    showEl('scene-box',true);
+    loadScene(cur);
+  }
+}
+
+function showEndScreen(){
+  showScreen('end');
+  speak('와! 모든 친구들의 마음을 이해하고 위로해줬어요! 정말 대단해요! 우리 마음은 무지개처럼 다양하고 소중해요!',0.85,1.3);
+  spawnMany(['🌈','⭐','🎊','💫','✨','💕','🌟','🎉'],28);
+}
+
+function restartAll(){
+  cur=0;
+  showScreen('intro');
+}
+
+// ════════════════════════════════════════
+//  HELPERS
+// ════════════════════════════════════════
+function showEl(id,vis){
+  const el=document.getElementById(id);
+  if(el)el.style.display=vis?(el.classList.contains('choices-wrap')||el.id==='choices'?'flex':'block'):'none';
+}
+
+function spawnAt(el,icons){
+  const r=el.getBoundingClientRect();
+  for(let i=0;i<8;i++){
+    setTimeout(()=>{
+      const p=document.createElement('div');
+      p.className='particle';
+      p.textContent=icons[Math.floor(Math.random()*icons.length)];
+      p.style.left=(r.left+r.width/2+(Math.random()-.5)*r.width)+'px';
+      p.style.top =(r.top+r.height/2+(Math.random()-.5)*r.height)+'px';
+      p.style.fontSize=(1.4+Math.random()*.8)+'rem';
+      p.style.animationDuration=(.8+Math.random()*.5)+'s';
+      p.style.animationDelay=(Math.random()*.15)+'s';
+      document.body.appendChild(p);
+      setTimeout(()=>p.remove(),1500);
+    },i*40);
+  }
+}
+
+function spawnMany(icons,n=16){
+  for(let i=0;i<n;i++){
+    setTimeout(()=>{
+      const p=document.createElement('div');
+      p.className='particle';
+      p.textContent=icons[Math.floor(Math.random()*icons.length)];
+      p.style.left=(5+Math.random()*90)+'vw';
+      p.style.top =(5+Math.random()*85)+'vh';
+      p.style.fontSize=(1.5+Math.random())+'rem';
+      p.style.animationDuration=(.7+Math.random()*.9)+'s';
+      document.body.appendChild(p);
+      setTimeout(()=>p.remove(),1700);
+    },i*65);
+  }
+}
+
+let toastT;
+function showToast(msg,dur=1700){
+  if(!msg)return;
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastT);
+  toastT=setTimeout(()=>t.classList.remove('show'),dur);
+}
+
+// ════ INIT ════
+window.addEventListener('load',()=>{
+  setTimeout(()=>speak('안녕하세요! 오늘 내 마음은 어떤 색일까요? 친구들을 도와봐요!',0.85,1.3),700);
+});
+</script>
+</body>
+</html>
+
