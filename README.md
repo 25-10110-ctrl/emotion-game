@@ -44,4 +44,5 @@
 
 ## 🌐 온라인 플레이 (GitHub Pages)
 
-- **게임 바로가기**: [https://25-10110-ctrl.github.io/kids-web-games/emotion-game.html](https://25-10110-ctrl.github.io/kids-web-games/emotion-game.html)
+- **게임 바로가기**: [https://25-10110-ctrl.github.io/emotion-game/emotion-game.html](https://25-10110-ctrl.github.io/emotion-game/emotion-game.html)
+- **저장소 링크**: [https://github.com/25-10110-ctrl/emotion-game](https://github.com/25-10110-ctrl/emotion-game)
